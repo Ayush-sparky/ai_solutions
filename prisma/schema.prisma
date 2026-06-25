@@ -1,0 +1,27 @@
+// Prisma schema for AI-Solutions
+// Docs: https://pris.ly/d/prisma-schema
+//
+// NOTE (Prisma 7): connection URLs are NOT defined here anymore.
+//   - Migrate/CLI datasource URL  -> prisma.config.mjs (uses DIRECT_URL)
+//   - Runtime client connection   -> driver adapter in lib/prisma.js (uses DATABASE_URL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Define your models below. Example for the public inquiry form:
+//
+// model Inquiry {
+//   id        String   @id @default(cuid())
+//   name      String
+//   email     String
+//   company   String?
+//   message   String
+//   createdAt DateTime @default(now())
+// }
+// ---------------------------------------------------------------------------
