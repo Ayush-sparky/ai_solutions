@@ -13,15 +13,100 @@ datasource db {
   provider = "postgresql"
 }
 
-// ---------------------------------------------------------------------------
-// Define your models below. Example for the public inquiry form:
-//
-// model Inquiry {
-//   id        String   @id @default(cuid())
-//   name      String
-//   email     String
-//   company   String?
-//   message   String
-//   createdAt DateTime @default(now())
-// }
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// Enums
+// ===========================================================================
+
+/// Moderation lifecycle for customer Reviews. New reviews start as PENDING and
+/// are only shown publicly once an admin sets them to APPROVED. Stored as a
+/// native Postgres enum type.
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ===========================================================================
+// Models
+// ===========================================================================
+
+/// Sales/contact lead submitted from the public marketing site.
+model Inquiry {
+  id         String   @id @default(cuid())
+  name       String
+  email      String
+  phone      String
+  company    String
+  country    String
+  jobTitle   String
+  jobDetails String
+  createdAt  DateTime @default(now())
+}
+
+/// Customer testimonial that passes through admin moderation before going live.
+model Review {
+  id         String       @id @default(cuid())
+  authorName String
+  email      String
+  rating     Int // 1-5; range enforced by a Postgres CHECK constraint in the migration.
+  content    String
+  status     ReviewStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+
+  // Serves the admin moderation queue: filter by status, order by createdAt.
+  @@index([status, createdAt])
+}
+
+/// "Notify me about future offerings" sign-up, distinct from active inquiries.
+model FutureInterest {
+  id             String   @id @default(cuid())
+  name           String
+  email          String
+  areaOfInterest String
+  message        String
+  createdAt      DateTime @default(now())
+}
+
+/// Blog/news article with a draft -> publish workflow.
+model Article {
+  id            String   @id @default(cuid())
+  title         String
+  slug          String   @unique
+  content       String
+  coverImageUrl String?
+  published     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Serves the public listing: where published = true order by createdAt desc.
+  @@index([published, createdAt])
+}
+
+/// Image gallery / portfolio entry shown on the marketing site.
+model GalleryItem {
+  id        String   @id @default(cuid())
+  title     String
+  imageUrl  String
+  caption   String?
+  createdAt DateTime @default(now())
+}
+
+/// Event (webinar, conference, demo) listed chronologically by eventDate.
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  location    String
+  eventDate   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([eventDate])
+}
+
+/// Back-office administrator account for the secure dashboard.
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}

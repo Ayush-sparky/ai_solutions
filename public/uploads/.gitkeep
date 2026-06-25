@@ -1,0 +1,2 @@
+# Keeps the uploads/ folder in git. Uploaded image files themselves are
+# gitignored (see .gitignore) — they're created at runtime by the admin panel.
