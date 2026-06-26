@@ -1,18 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { submitInquiry } from "./actions";
-import { COUNTRIES } from "@/lib/countries";
+import { useActionState, useState } from "react";
+import { submitEventRegistration } from "../actions";
 
-const EMPTY = {
-  name: "",
-  email: "",
-  phone: "",
-  company: "",
-  country: "",
-  jobTitle: "",
-  jobDetails: "",
-};
+const EMPTY = { name: "", email: "", phone: "", company: "", message: "" };
 
 const initialState = { success: false, errors: {} };
 
@@ -25,17 +16,20 @@ function inputClass(hasError) {
 function FieldError({ id, message }) {
   if (!message) return null;
   return (
-    <p id={`${id}-error`} className="mt-1.5 text-sm text-red-600">
+    // role="alert" so the error (incl. "already registered for this event") is
+    // announced to assistive tech the moment it appears, not only on refocus.
+    <p id={`${id}-error`} role="alert" className="mt-1.5 text-sm text-red-600">
       {message}
     </p>
   );
 }
 
-function TextField({ id, label, value, onChange, error, type = "text", ...rest }) {
+function TextField({ id, label, value, onChange, error, type = "text", optional, ...rest }) {
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-slate-700">
         {label}
+        {optional ? <span className="ml-1 text-slate-400">(optional)</span> : null}
       </label>
       <input
         id={id}
@@ -53,43 +47,60 @@ function TextField({ id, label, value, onChange, error, type = "text", ...rest }
   );
 }
 
-export default function ContactForm() {
-  const [state, formAction, pending] = useActionState(submitInquiry, initialState);
+export default function EventRegistrationForm({ eventId, eventTitle }) {
+  const [state, formAction, pending] = useActionState(
+    submitEventRegistration,
+    initialState
+  );
   const [values, setValues] = useState(EMPTY);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const errors = state.errors ?? {};
-
-  // Clear the form and reveal the success banner after a successful submit.
-  useEffect(() => {
+  // Reconcile against a fresh action result during render (rather than in an
+  // effect, which would trigger a cascading re-render): when a submission
+  // succeeds, clear the fields and reveal the success panel. useActionState
+  // returns a new object per submission, so the identity check fires each time.
+  const [seenState, setSeenState] = useState(state);
+  if (state !== seenState) {
+    setSeenState(state);
     if (state.success) {
       setValues(EMPTY);
       setShowSuccess(true);
     }
-  }, [state]);
+  }
+
+  const errors = state.errors ?? {};
 
   function handleChange(event) {
     if (showSuccess) setShowSuccess(false);
     const { name, value } = event.target;
-    // Names can't contain numbers — strip digits as the visitor types so the
-    // field never ends up as "only numbers". The server action enforces this too.
-    const next = name === "name" ? value.replace(/[0-9]/g, "") : value;
-    setValues((prev) => ({ ...prev, [name]: next }));
+    setValues((prev) => ({ ...prev, [name]: value }));
+  }
+
+  if (showSuccess) {
+    return (
+      <div
+        role="status"
+        className="rounded-xl border border-green-200 bg-green-50 p-6 text-sm text-green-800"
+      >
+        <p className="text-base font-semibold">You&apos;re registered!</p>
+        <p className="mt-1.5">
+          Thanks for signing up for <span className="font-medium">{eventTitle}</span>.
+          We&apos;ve saved your spot and will email you the details.
+        </p>
+        <button
+          type="button"
+          onClick={() => setShowSuccess(false)}
+          className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-green-700 hover:text-green-600"
+        >
+          Register someone else
+        </button>
+      </div>
+    );
   }
 
   return (
     <form action={formAction} noValidate className="space-y-5">
-      {showSuccess ? (
-        <div
-          role="status"
-          className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800"
-        >
-          <p className="font-semibold">Thanks for reaching out!</p>
-          <p className="mt-1">
-            We&apos;ve received your message and will get back to you shortly.
-          </p>
-        </div>
-      ) : null}
+      <input type="hidden" name="eventId" value={eventId} />
 
       {state.message ? (
         <div
@@ -124,6 +135,7 @@ export default function ContactForm() {
           id="phone"
           label="Phone"
           type="tel"
+          optional
           value={values.phone}
           onChange={handleChange}
           error={errors.phone}
@@ -133,63 +145,32 @@ export default function ContactForm() {
         <TextField
           id="company"
           label="Company"
+          optional
           value={values.company}
           onChange={handleChange}
           error={errors.company}
           autoComplete="organization"
           placeholder="Himalaya Tech Pvt. Ltd."
         />
-
-        <div>
-          <label htmlFor="country" className="block text-sm font-medium text-slate-700">
-            Country
-          </label>
-          <select
-            id="country"
-            name="country"
-            value={values.country}
-            onChange={handleChange}
-            aria-invalid={Boolean(errors.country)}
-            aria-describedby={errors.country ? "country-error" : undefined}
-            className={`mt-1.5 ${inputClass(Boolean(errors.country))}`}
-          >
-            <option value="">Select country…</option>
-            {COUNTRIES.map((country) => (
-              <option key={country} value={country}>
-                {country}
-              </option>
-            ))}
-          </select>
-          <FieldError id="country" message={errors.country} />
-        </div>
-
-        <TextField
-          id="jobTitle"
-          label="Job title"
-          value={values.jobTitle}
-          onChange={handleChange}
-          error={errors.jobTitle}
-          autoComplete="organization-title"
-          placeholder="Founder, Kathmandu"
-        />
       </div>
 
       <div>
-        <label htmlFor="jobDetails" className="block text-sm font-medium text-slate-700">
-          Project / job details
+        <label htmlFor="message" className="block text-sm font-medium text-slate-700">
+          Anything you&apos;d like us to know?
+          <span className="ml-1 text-slate-400">(optional)</span>
         </label>
         <textarea
-          id="jobDetails"
-          name="jobDetails"
-          rows={5}
-          value={values.jobDetails}
+          id="message"
+          name="message"
+          rows={3}
+          value={values.message}
           onChange={handleChange}
-          aria-invalid={Boolean(errors.jobDetails)}
-          aria-describedby={errors.jobDetails ? "jobDetails-error" : undefined}
-          placeholder="Tell us about your goals, timeline, and any context that helps."
-          className={`mt-1.5 ${inputClass(Boolean(errors.jobDetails))}`}
+          aria-invalid={Boolean(errors.message)}
+          aria-describedby={errors.message ? "message-error" : undefined}
+          placeholder="Questions, accessibility needs, topics you'd like covered…"
+          className={`mt-1.5 ${inputClass(Boolean(errors.message))}`}
         />
-        <FieldError id="jobDetails" message={errors.jobDetails} />
+        <FieldError id="message" message={errors.message} />
       </div>
 
       <button
@@ -197,7 +178,7 @@ export default function ContactForm() {
         disabled={pending}
         className="inline-flex w-full items-center justify-center rounded-full bg-indigo-600 px-7 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
-        {pending ? "Sending…" : "Send message"}
+        {pending ? "Registering…" : "Register for this event"}
       </button>
     </form>
   );

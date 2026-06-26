@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI-Solutions · Low-Fidelity Wireframes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --canvas: #ece7db;     /* light beige board */
+    --paper: #ffffff;      /* page frames */
+    --ink: #23233a;        /* dark navy-black "pen" */
+    --muted: #9a958a;      /* labels on the board */
+    --soft: #c9c3b6;       /* faint dividers */
+    --x: %2323233a;        /* ink for the crossed-box svg (# -> %23) */
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; }
+  body {
+    font-family: "Architects Daughter", "Comic Sans MS", cursive;
+    background: var(--canvas);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- faux app toolbar (echoes the reference) ---------- */
+  .toolbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 10px 18px;
+    background: var(--paper); border-bottom: 1px solid #e4e0d6;
+  }
+  .toolbar .brand { font-size: 22px; letter-spacing: .5px; }
+  .toolbar .brand b { color: #4f46e5; }
+  .toolbar .tools { display: flex; gap: 10px; align-items: center; color: var(--muted); }
+  .toolbar .pill {
+    border: 2px solid var(--ink); border-radius: 14px 8px 16px 8px/8px 16px 8px 14px;
+    padding: 4px 14px; font-size: 14px;
+  }
+  .toolbar .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink); }
+
+  /* ---------- board ---------- */
+  .board { padding: 28px 28px 70px; }
+  .intro { max-width: 980px; margin: 4px auto 26px; text-align: center; }
+  .intro h1 { font-size: 30px; margin: 0 0 6px; }
+  .intro p { margin: 0; color: #6c675c; font-size: 17px; }
+
+  .section-label {
+    font-size: 22px; color: #6c675c; margin: 36px 6px 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-label::after { content: ""; flex: 1; height: 2px; background: var(--soft); }
+
+  .strip {
+    display: flex; flex-wrap: wrap; gap: 30px 26px;
+    align-items: flex-start;
+  }
+
+  /* ---------- a single page frame ---------- */
+  .framewrap { width: 300px; }
+  .flabel { font-size: 17px; margin: 0 0 8px 4px; color: #4a463d; }
+  .flabel .route { color: var(--muted); font-size: 14px; }
+
+  .frame {
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 14px 9px 14px 9px / 9px 14px 9px 14px;
+    overflow: hidden;
+  }
+  .bbar {
+    display: flex; gap: 6px; align-items: center;
+    padding: 7px 10px; border-bottom: 2px solid var(--ink);
+  }
+  .bbar i { width: 9px; height: 9px; border: 1.6px solid var(--ink); border-radius: 50%; }
+
+  .screen { padding: 14px 13px; display: flex; flex-direction: column; gap: 13px; }
+
+  /* ---------- primitives ---------- */
+  .col { display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; gap: 8px; }
+  .between { justify-content: space-between; align-items: center; }
+  .center { align-items: center; justify-content: center; }
+  .grow { flex: 1; }
+  .wrap { flex-wrap: wrap; }
+
+  /* crossed-box image placeholder (scales to any rectangle) */
+  .ph {
+    border: 2px solid var(--ink);
+    border-radius: 12px 7px 13px 7px / 7px 13px 7px 12px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none' viewBox='0 0 100 100'><path d='M3 3 L97 97 M97 3 L3 97' fill='none' stroke='%2323233a' stroke-width='1.4' vector-effect='non-scaling-stroke'/></svg>");
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+
+  .logo { width: 22px; height: 22px; border: 2px solid var(--ink); border-radius: 50%; flex: none; }
+  .logo.sm { width: 17px; height: 17px; }
+
+  .links { display: flex; gap: 9px; font-size: 11px; letter-spacing: .5px; }
+
+  .ttl { font-size: 16px; line-height: 1.1; }
+  .ttl.lg { font-size: 20px; }
+  .cap { font-size: 11px; letter-spacing: 1px; color: #55504733; }
+  .cap.ink { color: var(--ink); }
+
+  /* paragraph text = stacked ruled lines */
+  .para {
+    width: 100%;
+    border-radius: 2px;
+    background: repeating-linear-gradient(var(--ink) 0 2px, transparent 2px 8px);
+  }
+
+  /* single bar (heading underline / input value) */
+  .bar { height: 5px; background: var(--ink); border-radius: 3px; }
+  .bar.s { width: 40%; }
+  .bar.m { width: 65%; }
+
+  /* CTA / button */
+  .cta {
+    align-self: flex-start;
+    border: 2px solid var(--ink);
+    border-radius: 9px 16px 9px 16px / 16px 9px 16px 9px;
+    padding: 2px 10px; font-size: 12px; letter-spacing: .5px;
+  }
+  .cta.solid { background: var(--ink); color: var(--paper); }
+  .cta.block { align-self: stretch; text-align: center; }
+
+  /* form input */
+  .input {
+    border: 2px solid var(--ink);
+    border-radius: 8px 5px 9px 5px / 5px 9px 5px 8px;
+    height: 22px;
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field .lbl { font-size: 11px; color: #6c675c; }
+
+  /* footer block */
+  .foot {
+    border-top: 2px solid var(--ink); margin-top: 4px; padding-top: 9px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .foot .ico { width: 14px; height: 14px; border: 1.6px solid var(--ink); border-radius: 3px; }
+
+  .divider { height: 2px; background: var(--ink); width: 100%; }
+
+  /* admin two-column screen */
+  .admin { flex-direction: row; gap: 0; padding: 0; }
+  .sidebar {
+    width: 78px; flex: none; border-right: 2px solid var(--ink);
+    padding: 12px 9px; display: flex; flex-direction: column; gap: 9px;
+  }
+  .sidebar .nav-item { height: 9px; border-radius: 3px; background: var(--ink); opacity: .55; }
+  .sidebar .nav-item.active { opacity: 1; }
+  .content { padding: 14px 13px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* stat cards */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .card {
+    border: 2px solid var(--ink);
+    border-radius: 11px 7px 12px 7px / 7px 12px 7px 11px;
+    padding: 9px; display: flex; flex-direction: column; gap: 7px; min-height: 56px;
+  }
+  .card .num { font-size: 20px; }
+  .card.alert { border-color: #c98a13; }
+  .card.alert .num { color: #c98a13; }
+
+  /* table */
+  .table { border: 2px solid var(--ink); border-radius: 9px; overflow: hidden; }
+  .trow { display: flex; gap: 8px; align-items: center; padding: 8px 9px; border-bottom: 1.6px solid var(--ink); }
+  .trow:last-child { border-bottom: 0; }
+  .trow.head { background: #f1eee6; }
+  .cellt { font-size: 10px; letter-spacing: .5px; color: #6c675c; }
+
+  .stars { letter-spacing: 2px; font-size: 14px; }
+  .badge {
+    border: 1.6px solid var(--ink); border-radius: 9px;
+    padding: 0 7px; font-size: 10px; letter-spacing: .5px;
+  }
+  .badge.warn { border-color: #c98a13; color: #c98a13; }
+  .badge.ok { border-color: #2f8a4a; color: #2f8a4a; }
+
+  .chat {
+    position: relative; align-self: flex-end;
+    width: 34px; height: 34px; border: 2px solid var(--ink); border-radius: 50% 50% 50% 8px;
+    display: grid; place-items: center; font-size: 15px; margin-top: 2px;
+  }
+
+  .carrow { display: flex; align-items: center; gap: 8px; }
+  .arrow { font-size: 18px; color: #6c675c; }
+  .dots { display: flex; gap: 5px; justify-content: center; }
+  .dots i { width: 6px; height: 6px; border-radius: 50%; border: 1.4px solid var(--ink); }
+  .dots i.on { background: var(--ink); }
+
+  .legend {
+    display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;
+    color: #6c675c; font-size: 14px; margin-top: 8px;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend .swatch { display: inline-block; width: 22px; height: 16px; }
+
+  /* ---------- desktop (wide) frames ---------- */
+  .framewrap.lg { width: 860px; max-width: 100%; }
+  .frame.lg .screen { padding: 18px; gap: 16px; }
+  .dnav .links { display: flex; gap: 11px; font-size: 10px; letter-spacing: .4px; flex-wrap: wrap; }
+  .dnav .ttl { font-size: 16px; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .split { display: grid; grid-template-columns: 5fr 7fr; gap: 18px; align-items: start; }
+  .hero {
+    border: 2px solid var(--ink);
+    border-radius: 14px 9px 14px 9px / 9px 14px 9px 14px;
+    padding: 18px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .hero.center { align-items: center; text-align: center; }
+  .sidebar.lg { width: 152px; padding: 14px 12px; gap: 5px; }
+  .snav { font-size: 12px; color: #6c675c; padding: 4px 7px; border-radius: 6px; }
+  .snav.active { background: #efece4; color: var(--ink); }
+  .maxw { max-width: 560px; margin: 0 auto; width: 100%; }
+</style>
+</head>
+<body>
+
+  <!-- decorative toolbar -->
+  <div class="toolbar">
+    <div class="brand"><b>AI</b>-Solutions · wireframes</div>
+    <div class="tools">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <div class="pill">Share</div>
+    </div>
+  </div>
+
+  <div class="board">
+    <div class="intro">
+      <h1>AI-Solutions — Low-Fidelity Wireframes</h1>
+      <p>Sketch-level layout of every screen — public marketing site + secure admin dashboard — in both desktop and mobile views.</p>
+      <div class="legend">
+        <span><span class="ph swatch"></span> image / media</span>
+        <span><span class="para swatch" style="height:14px"></span> body text</span>
+        <span><span class="cta" style="padding:1px 8px">CTA</span> button</span>
+      </div>
+    </div>
+
+    <!-- ================= DESKTOP · PUBLIC ================= -->
+    <div class="section-label">🖥️ Desktop · Public site</div>
+    <div class="strip">
+
+      <!-- Home (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Home <span class="route">/</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="dnav row between">
+              <div class="row" style="align-items:center;gap:8px"><div class="logo"></div><span class="ttl">AI-Solutions</span></div>
+              <div class="links"><span>HOME</span><span>ABOUT</span><span>SERVICES</span><span>ARTICLES</span><span>GALLERY</span><span>EVENTS</span><span>CONTACT</span><span>REVIEWS</span></div>
+              <div class="cta solid">GET IN TOUCH</div>
+            </div>
+            <div class="hero">
+              <div class="cap ink">AI CONSULTING &amp; AUTOMATION</div>
+              <div class="ttl lg" style="font-size:26px">Put AI to work for your business.</div>
+              <div class="para" style="height:22px;max-width:55%"></div>
+              <div class="row"><div class="cta solid">GET STARTED</div><div class="cta">EXPLORE SERVICES</div></div>
+            </div>
+            <div class="col center"><div class="cap ink">WHAT WE DO</div><div class="ttl lg">Services built around your goals</div></div>
+            <div class="g3">
+              <div class="card"><div class="ph" style="width:30px;height:30px"></div><div class="ttl">Service #1</div><div class="para" style="height:20px"></div></div>
+              <div class="card"><div class="ph" style="width:30px;height:30px"></div><div class="ttl">Service #2</div><div class="para" style="height:20px"></div></div>
+              <div class="card"><div class="ph" style="width:30px;height:30px"></div><div class="ttl">Service #3</div><div class="para" style="height:20px"></div></div>
+              <div class="card"><div class="ph" style="width:30px;height:30px"></div><div class="ttl">Service #4</div><div class="para" style="height:20px"></div></div>
+              <div class="card"><div class="ph" style="width:30px;height:30px"></div><div class="ttl">Service #5</div><div class="para" style="height:20px"></div></div>
+              <div class="card"><div class="ph" style="width:30px;height:30px"></div><div class="ttl">Service #6</div><div class="para" style="height:20px"></div></div>
+            </div>
+            <div class="col center"><div class="cap ink">TESTIMONIALS</div><div class="ttl lg">What our clients say</div></div>
+            <div class="g3">
+              <div class="card"><div class="stars">★★★★★</div><div class="para" style="height:26px"></div><div class="divider"></div><div class="bar m"></div></div>
+              <div class="card"><div class="stars">★★★★★</div><div class="para" style="height:26px"></div><div class="divider"></div><div class="bar m"></div></div>
+              <div class="card"><div class="stars">★★★★☆</div><div class="para" style="height:26px"></div><div class="divider"></div><div class="bar m"></div></div>
+            </div>
+            <div class="hero center"><div class="ttl lg">Ready to put AI to work?</div><div class="row center"><div class="cta solid">GET IN TOUCH</div><div class="cta">READ OUR ARTICLES</div></div></div>
+            <div class="foot"><div class="g4" style="width:100%">
+              <div class="col"><div class="logo"></div><div class="para" style="height:24px"></div></div>
+              <div class="col"><div class="cap ink">EXPLORE</div><div class="bar s"></div><div class="bar s"></div><div class="bar s"></div></div>
+              <div class="col"><div class="cap ink">GET IN TOUCH</div><div class="bar m"></div><div class="bar s"></div></div>
+              <div class="col"><div class="cap ink">CONTACT</div><div class="cta">START A PROJECT</div></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Services (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Services <span class="route">/services</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="dnav row between">
+              <div class="row" style="align-items:center;gap:8px"><div class="logo"></div><span class="ttl">AI-Solutions</span></div>
+              <div class="links"><span>HOME</span><span>ABOUT</span><span>SERVICES</span><span>ARTICLES</span><span>GALLERY</span><span>EVENTS</span><span>CONTACT</span><span>REVIEWS</span></div>
+              <div class="cta solid">GET IN TOUCH</div>
+            </div>
+            <div class="hero"><div class="cap ink">OUR SERVICES</div><div class="ttl lg" style="font-size:24px">End-to-end AI, strategy to production.</div><div class="cta solid">FREE CONSULTATION</div></div>
+            <div class="g2">
+              <div class="card"><div class="row" style="align-items:center;gap:8px"><div class="ph" style="width:30px;height:30px"></div><div class="ttl">Service #1</div></div><div class="para" style="height:18px"></div><div class="divider"></div><div class="bar"></div><div class="bar m"></div></div>
+              <div class="card"><div class="row" style="align-items:center;gap:8px"><div class="ph" style="width:30px;height:30px"></div><div class="ttl">Service #2</div></div><div class="para" style="height:18px"></div><div class="divider"></div><div class="bar"></div><div class="bar m"></div></div>
+              <div class="card"><div class="row" style="align-items:center;gap:8px"><div class="ph" style="width:30px;height:30px"></div><div class="ttl">Service #3</div></div><div class="para" style="height:18px"></div><div class="divider"></div><div class="bar"></div><div class="bar m"></div></div>
+              <div class="card"><div class="row" style="align-items:center;gap:8px"><div class="ph" style="width:30px;height:30px"></div><div class="ttl">Service #4</div></div><div class="para" style="height:18px"></div><div class="divider"></div><div class="bar"></div><div class="bar m"></div></div>
+            </div>
+            <div class="col center"><div class="cap ink">HOW WE WORK</div></div>
+            <div class="g4">
+              <div class="card"><div class="ttl lg">01</div><div class="ttl">Discover</div><div class="para" style="height:18px"></div></div>
+              <div class="card"><div class="ttl lg">02</div><div class="ttl">Design</div><div class="para" style="height:18px"></div></div>
+              <div class="card"><div class="ttl lg">03</div><div class="ttl">Build</div><div class="para" style="height:18px"></div></div>
+              <div class="card"><div class="ttl lg">04</div><div class="ttl">Scale</div><div class="para" style="height:18px"></div></div>
+            </div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- About (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">About <span class="route">/about</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="dnav row between">
+              <div class="row" style="align-items:center;gap:8px"><div class="logo"></div><span class="ttl">AI-Solutions</span></div>
+              <div class="links"><span>HOME</span><span>ABOUT</span><span>SERVICES</span><span>ARTICLES</span><span>GALLERY</span><span>EVENTS</span><span>CONTACT</span><span>REVIEWS</span></div>
+              <div class="cta solid">GET IN TOUCH</div>
+            </div>
+            <div class="hero"><div class="cap ink">ABOUT US</div><div class="ttl lg" style="font-size:24px">We make AI practical for real businesses.</div><div class="para" style="height:20px;max-width:60%"></div></div>
+            <div class="split">
+              <div class="col"><div class="cap ink">OUR STORY</div><div class="ttl lg">A trusted AI partner</div></div>
+              <div class="col"><div class="para" style="height:40px"></div><div class="para" style="height:40px"></div></div>
+            </div>
+            <div class="hero center"><div class="g4" style="width:100%;text-align:center">
+              <div class="col center"><div class="ttl lg">150+</div><div class="cap ink">PROJECTS</div></div>
+              <div class="col center"><div class="ttl lg">40%</div><div class="cap ink">COST CUT</div></div>
+              <div class="col center"><div class="ttl lg">12</div><div class="cap ink">COUNTRIES</div></div>
+              <div class="col center"><div class="ttl lg">98%</div><div class="cap ink">SATISFACTION</div></div>
+            </div></div>
+            <div class="col center"><div class="cap ink">WHAT WE VALUE</div></div>
+            <div class="g3">
+              <div class="card"><div class="ph" style="width:28px;height:28px"></div><div class="ttl">Value</div><div class="para" style="height:18px"></div></div>
+              <div class="card"><div class="ph" style="width:28px;height:28px"></div><div class="ttl">Value</div><div class="para" style="height:18px"></div></div>
+              <div class="card"><div class="ph" style="width:28px;height:28px"></div><div class="ttl">Value</div><div class="para" style="height:18px"></div></div>
+            </div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Articles list (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Articles <span class="route">/articles</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="dnav row between">
+              <div class="row" style="align-items:center;gap:8px"><div class="logo"></div><span class="ttl">AI-Solutions</span></div>
+              <div class="links"><span>HOME</span><span>ABOUT</span><span>SERVICES</span><span>ARTICLES</span><span>GALLERY</span><span>EVENTS</span><span>CONTACT</span><span>REVIEWS</span></div>
+              <div class="cta solid">GET IN TOUCH</div>
+            </div>
+            <div class="hero"><div class="cap ink">ARTICLES</div><div class="ttl lg">Insights from the AI-Solutions team</div></div>
+            <div class="g3">
+              <div class="card" style="padding:0"><div class="ph" style="height:80px;border:0;border-bottom:2px solid var(--ink)"></div><div class="col" style="padding:10px"><div class="cap ink">DATE</div><div class="ttl">Article title</div><div class="para" style="height:18px"></div></div></div>
+              <div class="card" style="padding:0"><div class="ph" style="height:80px;border:0;border-bottom:2px solid var(--ink)"></div><div class="col" style="padding:10px"><div class="cap ink">DATE</div><div class="ttl">Article title</div><div class="para" style="height:18px"></div></div></div>
+              <div class="card" style="padding:0"><div class="ph" style="height:80px;border:0;border-bottom:2px solid var(--ink)"></div><div class="col" style="padding:10px"><div class="cap ink">DATE</div><div class="ttl">Article title</div><div class="para" style="height:18px"></div></div></div>
+              <div class="card" style="padding:0"><div class="ph" style="height:80px;border:0;border-bottom:2px solid var(--ink)"></div><div class="col" style="padding:10px"><div class="cap ink">DATE</div><div class="ttl">Article title</div><div class="para" style="height:18px"></div></div></div>
+              <div class="card" style="padding:0"><div class="ph" style="height:80px;border:0;border-bottom:2px solid var(--ink)"></div><div class="col" style="padding:10px"><div class="cap ink">DATE</div><div class="ttl">Article title</div><div class="para" style="height:18px"></div></div></div>
+              <div class="card" style="padding:0"><div class="ph" style="height:80px;border:0;border-bottom:2px solid var(--ink)"></div><div class="col" style="padding:10px"><div class="cap ink">DATE</div><div class="ttl">Article title</div><div class="para" style="height:18px"></div></div></div>
+            </div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Article detail (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Article detail <span class="route">/articles/[slug]</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="dnav row between">
+              <div class="row" style="align-items:center;gap:8px"><div class="logo"></div><span class="ttl">AI-Solutions</span></div>
+              <div class="links"><span>HOME</span><span>ABOUT</span><span>SERVICES</span><span>ARTICLES</span><span>GALLERY</span><span>EVENTS</span><span>CONTACT</span><span>REVIEWS</span></div>
+              <div class="cta solid">GET IN TOUCH</div>
+            </div>
+            <div class="hero"><div class="maxw col"><div class="cap ink">&larr; ALL ARTICLES · DATE</div><div class="ttl lg" style="font-size:26px">The article headline goes here</div></div></div>
+            <div class="ph maxw" style="height:150px"></div>
+            <div class="maxw col">
+              <div class="para" style="height:36px"></div>
+              <div class="para" style="height:54px"></div>
+              <div class="para" style="height:30px"></div>
+              <div class="cta solid">TALK TO US ABOUT YOUR PROJECT</div>
+            </div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gallery (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Gallery <span class="route">/gallery</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="dnav row between">
+              <div class="row" style="align-items:center;gap:8px"><div class="logo"></div><span class="ttl">AI-Solutions</span></div>
+              <div class="links"><span>HOME</span><span>ABOUT</span><span>SERVICES</span><span>ARTICLES</span><span>GALLERY</span><span>EVENTS</span><span>CONTACT</span><span>REVIEWS</span></div>
+              <div class="cta solid">GET IN TOUCH</div>
+            </div>
+            <div class="hero"><div class="cap ink">GALLERY</div><div class="ttl lg">A look inside AI-Solutions</div></div>
+            <div class="g4">
+              <div class="ph" style="height:90px"></div><div class="ph" style="height:90px"></div><div class="ph" style="height:90px"></div><div class="ph" style="height:90px"></div>
+              <div class="ph" style="height:90px"></div><div class="ph" style="height:90px"></div><div class="ph" style="height:90px"></div><div class="ph" style="height:90px"></div>
+            </div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Events (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Events <span class="route">/events</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="dnav row between">
+              <div class="row" style="align-items:center;gap:8px"><div class="logo"></div><span class="ttl">AI-Solutions</span></div>
+              <div class="links"><span>HOME</span><span>ABOUT</span><span>SERVICES</span><span>ARTICLES</span><span>GALLERY</span><span>EVENTS</span><span>CONTACT</span><span>REVIEWS</span></div>
+              <div class="cta solid">GET IN TOUCH</div>
+            </div>
+            <div class="hero"><div class="cap ink">EVENTS</div><div class="ttl lg">Upcoming events</div></div>
+            <div class="maxw col" style="gap:12px">
+              <div class="card"><div class="row" style="gap:12px;align-items:center"><div class="ph" style="width:48px;height:48px"></div><div class="col grow"><div class="ttl">Event title</div><div class="cap ink">DATE · TIME · LOCATION</div><div class="para" style="height:16px"></div></div></div></div>
+              <div class="card"><div class="row" style="gap:12px;align-items:center"><div class="ph" style="width:48px;height:48px"></div><div class="col grow"><div class="ttl">Event title</div><div class="cap ink">DATE · TIME · LOCATION</div><div class="para" style="height:16px"></div></div></div></div>
+              <div class="card"><div class="row" style="gap:12px;align-items:center"><div class="ph" style="width:48px;height:48px"></div><div class="col grow"><div class="ttl">Event title</div><div class="cap ink">DATE · TIME · LOCATION</div><div class="para" style="height:16px"></div></div></div></div>
+            </div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Contact <span class="route">/contact</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="dnav row between">
+              <div class="row" style="align-items:center;gap:8px"><div class="logo"></div><span class="ttl">AI-Solutions</span></div>
+              <div class="links"><span>HOME</span><span>ABOUT</span><span>SERVICES</span><span>ARTICLES</span><span>GALLERY</span><span>EVENTS</span><span>CONTACT</span><span>REVIEWS</span></div>
+              <div class="cta solid">GET IN TOUCH</div>
+            </div>
+            <div class="hero"><div class="cap ink">CONTACT</div><div class="ttl lg">Let's talk about your project</div></div>
+            <div class="split">
+              <div class="col">
+                <div class="ttl">Get in touch</div>
+                <div class="para" style="height:20px"></div>
+                <div class="cap ink">EMAIL · PHONE · LOCATION</div>
+                <div class="bar m"></div><div class="bar s"></div>
+                <div class="card"><div class="cap ink">WHAT HAPPENS NEXT</div><div class="para" style="height:30px"></div></div>
+              </div>
+              <div class="card">
+                <div class="g2">
+                  <div class="field"><span class="lbl">Name</span><div class="input"></div></div>
+                  <div class="field"><span class="lbl">Email</span><div class="input"></div></div>
+                  <div class="field"><span class="lbl">Phone</span><div class="input"></div></div>
+                  <div class="field"><span class="lbl">Company</span><div class="input"></div></div>
+                  <div class="field"><span class="lbl">Country ▾</span><div class="input"></div></div>
+                  <div class="field"><span class="lbl">Job title</span><div class="input"></div></div>
+                </div>
+                <div class="field"><span class="lbl">Project details</span><div class="input" style="height:54px"></div></div>
+                <div class="cta solid">SEND MESSAGE</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reviews (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Reviews <span class="route">/reviews</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="dnav row between">
+              <div class="row" style="align-items:center;gap:8px"><div class="logo"></div><span class="ttl">AI-Solutions</span></div>
+              <div class="links"><span>HOME</span><span>ABOUT</span><span>SERVICES</span><span>ARTICLES</span><span>GALLERY</span><span>EVENTS</span><span>CONTACT</span><span>REVIEWS</span></div>
+              <div class="cta solid">GET IN TOUCH</div>
+            </div>
+            <div class="hero"><div class="cap ink">REVIEWS</div><div class="ttl lg">What our clients say</div><div class="row" style="align-items:center"><div class="stars">★★★★★</div><div class="cap ink">4.8 AVERAGE · 24 REVIEWS</div></div></div>
+            <div class="g3">
+              <div class="card"><div class="stars">★★★★★</div><div class="para" style="height:26px"></div><div class="divider"></div><div class="bar m"></div></div>
+              <div class="card"><div class="stars">★★★★☆</div><div class="para" style="height:26px"></div><div class="divider"></div><div class="bar m"></div></div>
+              <div class="card"><div class="stars">★★★★★</div><div class="para" style="height:26px"></div><div class="divider"></div><div class="bar m"></div></div>
+            </div>
+            <div class="card maxw"><div class="ttl">Share your experience</div>
+              <div class="g2"><div class="field"><span class="lbl">Name</span><div class="input"></div></div><div class="field"><span class="lbl">Email</span><div class="input"></div></div></div>
+              <div class="field"><span class="lbl">Rating</span><div class="stars">☆☆☆☆☆</div></div>
+              <div class="field"><span class="lbl">Review</span><div class="input" style="height:40px"></div></div>
+              <div class="cta solid">SUBMIT REVIEW</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= DESKTOP · ADMIN ================= -->
+    <div class="section-label">🖥️ Desktop · Admin dashboard</div>
+    <div class="strip">
+
+      <!-- Dashboard (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Dashboard <span class="route">/admin</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar lg">
+              <div class="row" style="align-items:center;gap:6px"><div class="logo sm"></div><span class="cellt">ADMIN</span></div>
+              <div class="snav active">Dashboard</div><div class="snav">Inquiries</div><div class="snav">Reviews</div><div class="snav">Articles</div><div class="snav">Gallery</div><div class="snav">Events</div><div class="snav">Future interest</div><div class="snav">Log out</div>
+            </div>
+            <div class="content" style="gap:16px">
+              <div class="ttl lg">Dashboard</div>
+              <div class="cap ink">OVERVIEW OF ACTIVITY ACROSS THE SITE</div>
+              <div class="g4">
+                <div class="card"><span class="cap ink">TOTAL INQUIRIES</span><span class="num">128</span></div>
+                <div class="card"><span class="cap ink">TOTAL REVIEWS</span><span class="num">24</span></div>
+                <div class="card alert"><span class="cap ink">PENDING REVIEWS</span><span class="num">5</span></div>
+                <div class="card"><span class="cap ink">FUTURE INTEREST</span><span class="num">17</span></div>
+              </div>
+              <div class="ph" style="height:110px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inquiries (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Inquiries <span class="route">/admin/inquiries</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar lg">
+              <div class="row" style="align-items:center;gap:6px"><div class="logo sm"></div><span class="cellt">ADMIN</span></div>
+              <div class="snav">Dashboard</div><div class="snav active">Inquiries</div><div class="snav">Reviews</div><div class="snav">Articles</div><div class="snav">Gallery</div><div class="snav">Events</div><div class="snav">Future interest</div><div class="snav">Log out</div>
+            </div>
+            <div class="content">
+              <div class="row between"><div class="ttl lg">Inquiries</div><div class="badge">128</div></div>
+              <div class="table">
+                <div class="trow head"><span class="cellt grow">NAME</span><span class="cellt grow">EMAIL</span><span class="cellt grow">COMPANY</span><span class="cellt grow">COUNTRY</span><span class="cellt grow">JOB TITLE</span><span class="cellt">DATE</span><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">JUN 25</span><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">JUN 24</span><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">JUN 22</span><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">JUN 20</span><span class="cellt">▾</span></div>
+              </div>
+              <div class="cap ink">CLICK A ROW → EXPAND FULL JOB DETAILS</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reviews moderate (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Reviews (moderate) <span class="route">/admin/reviews</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar lg">
+              <div class="row" style="align-items:center;gap:6px"><div class="logo sm"></div><span class="cellt">ADMIN</span></div>
+              <div class="snav">Dashboard</div><div class="snav">Inquiries</div><div class="snav active">Reviews</div><div class="snav">Articles</div><div class="snav">Gallery</div><div class="snav">Events</div><div class="snav">Future interest</div><div class="snav">Log out</div>
+            </div>
+            <div class="content">
+              <div class="ttl lg">Reviews</div>
+              <div class="row wrap"><div class="badge">ALL</div><div class="badge warn">PENDING</div><div class="badge ok">APPROVED</div><div class="badge">REJECTED</div></div>
+              <div class="card"><div class="row between"><div class="row" style="gap:8px;align-items:center"><div class="bar m" style="width:120px"></div><span class="badge warn">PENDING</span></div><div class="stars">★★★★★</div></div><div class="para" style="height:20px"></div><div class="row"><div class="cta solid">APPROVE</div><div class="cta">REJECT</div></div></div>
+              <div class="card"><div class="row between"><div class="row" style="gap:8px;align-items:center"><div class="bar m" style="width:120px"></div><span class="badge ok">APPROVED</span></div><div class="stars">★★★★☆</div></div><div class="para" style="height:20px"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Articles manage (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Articles (manage) <span class="route">/admin/articles</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar lg">
+              <div class="row" style="align-items:center;gap:6px"><div class="logo sm"></div><span class="cellt">ADMIN</span></div>
+              <div class="snav">Dashboard</div><div class="snav">Inquiries</div><div class="snav">Reviews</div><div class="snav active">Articles</div><div class="snav">Gallery</div><div class="snav">Events</div><div class="snav">Future interest</div><div class="snav">Log out</div>
+            </div>
+            <div class="content">
+              <div class="row between"><div class="row" style="gap:10px;align-items:center"><div class="ttl lg">Articles</div><div class="badge">12</div></div><div class="cta solid">+ NEW ARTICLE</div></div>
+              <div class="table">
+                <div class="trow head"><span class="cellt grow">TITLE / SLUG</span><span class="cellt">STATUS</span><span class="cellt">UPDATED</span><span class="cellt">ACTIONS</span></div>
+                <div class="trow"><div class="col grow" style="gap:4px"><div class="bar m"></div><div class="bar s"></div></div><span class="badge ok">PUBLISHED</span><span class="cellt">JUN 25</span><span class="cellt">PUB · ✎ · 🗑</span></div>
+                <div class="trow"><div class="col grow" style="gap:4px"><div class="bar m"></div><div class="bar s"></div></div><span class="badge">DRAFT</span><span class="cellt">JUN 18</span><span class="cellt">PUB · ✎ · 🗑</span></div>
+                <div class="trow"><div class="col grow" style="gap:4px"><div class="bar m"></div><div class="bar s"></div></div><span class="badge ok">PUBLISHED</span><span class="cellt">JUN 10</span><span class="cellt">PUB · ✎ · 🗑</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Article editor (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Article editor <span class="route">/admin/articles/new</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar lg">
+              <div class="row" style="align-items:center;gap:6px"><div class="logo sm"></div><span class="cellt">ADMIN</span></div>
+              <div class="snav">Dashboard</div><div class="snav">Inquiries</div><div class="snav">Reviews</div><div class="snav active">Articles</div><div class="snav">Gallery</div><div class="snav">Events</div><div class="snav">Future interest</div><div class="snav">Log out</div>
+            </div>
+            <div class="content">
+              <div class="ttl lg">New article</div>
+              <div class="g2">
+                <div class="field"><span class="lbl">Title</span><div class="input"></div></div>
+                <div class="field"><span class="lbl">Slug</span><div class="input"></div></div>
+              </div>
+              <div class="field"><span class="lbl">Content</span><div class="input" style="height:70px"></div></div>
+              <div class="split">
+                <div class="field"><span class="lbl">Cover image — UPLOAD / REPLACE</span><div class="ph" style="height:70px"></div></div>
+                <div class="col" style="gap:10px"><div class="row between"><span class="lbl">Published</span><div class="badge">◯——</div></div><div class="cta solid">SAVE CHANGES</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gallery manage (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Gallery (manage) <span class="route">/admin/gallery</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar lg">
+              <div class="row" style="align-items:center;gap:6px"><div class="logo sm"></div><span class="cellt">ADMIN</span></div>
+              <div class="snav">Dashboard</div><div class="snav">Inquiries</div><div class="snav">Reviews</div><div class="snav">Articles</div><div class="snav active">Gallery</div><div class="snav">Events</div><div class="snav">Future interest</div><div class="snav">Log out</div>
+            </div>
+            <div class="content">
+              <div class="row between"><div class="ttl lg">Gallery</div><div class="cta solid">+ NEW ITEM</div></div>
+              <div class="g4">
+                <div class="card" style="padding:8px"><div class="ph" style="height:64px"></div><div class="bar m"></div><div class="cellt">✎ · 🗑</div></div>
+                <div class="card" style="padding:8px"><div class="ph" style="height:64px"></div><div class="bar m"></div><div class="cellt">✎ · 🗑</div></div>
+                <div class="card" style="padding:8px"><div class="ph" style="height:64px"></div><div class="bar m"></div><div class="cellt">✎ · 🗑</div></div>
+                <div class="card" style="padding:8px"><div class="ph" style="height:64px"></div><div class="bar m"></div><div class="cellt">✎ · 🗑</div></div>
+              </div>
+              <div class="cap ink">FORM: TITLE · IMAGE UPLOAD · CAPTION</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Events manage (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Events (manage) <span class="route">/admin/events</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar lg">
+              <div class="row" style="align-items:center;gap:6px"><div class="logo sm"></div><span class="cellt">ADMIN</span></div>
+              <div class="snav">Dashboard</div><div class="snav">Inquiries</div><div class="snav">Reviews</div><div class="snav">Articles</div><div class="snav">Gallery</div><div class="snav active">Events</div><div class="snav">Future interest</div><div class="snav">Log out</div>
+            </div>
+            <div class="content">
+              <div class="row between"><div class="ttl lg">Events</div><div class="cta solid">+ NEW EVENT</div></div>
+              <div class="table">
+                <div class="trow head"><span class="cellt grow">TITLE</span><span class="cellt">DATE (UTC)</span><span class="cellt grow">LOCATION</span><span class="cellt">ACTIONS</span></div>
+                <div class="trow"><div class="bar grow"></div><span class="cellt">JUN 25 · 14:30</span><div class="bar grow"></div><span class="cellt">✎ · 🗑</span></div>
+                <div class="trow"><div class="bar grow"></div><span class="cellt">JUL 10 · 10:00</span><div class="bar grow"></div><span class="cellt">✎ · 🗑</span></div>
+                <div class="trow"><div class="bar grow"></div><span class="cellt">AUG 03 · 16:00</span><div class="bar grow"></div><span class="cellt">✎ · 🗑</span></div>
+              </div>
+              <div class="cap ink">FORM: TITLE · DESCRIPTION · LOCATION · DATE-TIME</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Future interest (desktop) -->
+      <div class="framewrap lg">
+        <div class="flabel">Future interest <span class="route">/admin/future-interest</span></div>
+        <div class="frame lg"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar lg">
+              <div class="row" style="align-items:center;gap:6px"><div class="logo sm"></div><span class="cellt">ADMIN</span></div>
+              <div class="snav">Dashboard</div><div class="snav">Inquiries</div><div class="snav">Reviews</div><div class="snav">Articles</div><div class="snav">Gallery</div><div class="snav">Events</div><div class="snav active">Future interest</div><div class="snav">Log out</div>
+            </div>
+            <div class="content">
+              <div class="row between"><div class="ttl lg">Future interest</div><div class="badge">17</div></div>
+              <div class="table">
+                <div class="trow head"><span class="cellt grow">NAME</span><span class="cellt grow">EMAIL</span><span class="cellt grow">AREA OF INTEREST</span><span class="cellt">DATE</span><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">JUN 25</span><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">JUN 21</span><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">JUN 19</span><span class="cellt">▾</span></div>
+              </div>
+              <div class="cap ink">EXPAND ROW → FULL MESSAGE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= MOBILE · PUBLIC ================= -->
+    <div class="section-label">📱 Mobile · Public site</div>
+    <div class="strip">
+
+      <!-- Home / Landing -->
+      <div class="framewrap">
+        <div class="flabel">Home <span class="route">/</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="row between"><div class="logo"></div><div class="links"><span>SERVICES</span><span>ABOUT</span><span>CONTACT</span></div></div>
+            <div class="ph" style="height:120px"></div>
+            <div class="ttl">Put AI to work for your business</div>
+            <div class="para" style="height:24px"></div>
+            <div class="row"><div class="cta solid">GET STARTED</div><div class="cta">SERVICES</div></div>
+            <div class="cap ink">WHAT WE DO</div>
+            <div class="row"><div class="ph grow" style="height:46px"></div><div class="ph grow" style="height:46px"></div><div class="ph grow" style="height:46px"></div></div>
+            <div class="cap ink">TESTIMONIALS</div>
+            <div class="row">
+              <div class="col grow"><div class="stars">★★★★★</div><div class="para" style="height:20px"></div></div>
+              <div class="col grow"><div class="stars">★★★★★</div><div class="para" style="height:20px"></div></div>
+            </div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Services -->
+      <div class="framewrap">
+        <div class="flabel">Services <span class="route">/services</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="row between"><div class="logo"></div><div class="links"><span>SERVICES</span><span>ABOUT</span><span>CONTACT</span></div></div>
+            <div class="ph" style="height:90px"></div>
+            <div class="ttl">End-to-end AI services</div>
+            <div class="cta">FREE CONSULTATION</div>
+            <div class="row"><div class="ph" style="width:46px;height:46px"></div><div class="col grow"><div class="ttl">SERVICE #1</div><div class="para" style="height:22px"></div></div></div>
+            <div class="row"><div class="ph" style="width:46px;height:46px"></div><div class="col grow"><div class="ttl">SERVICE #2</div><div class="para" style="height:22px"></div></div></div>
+            <div class="row"><div class="ph" style="width:46px;height:46px"></div><div class="col grow"><div class="ttl">SERVICE #3</div><div class="para" style="height:22px"></div></div></div>
+            <div class="cap ink">HOW WE WORK</div>
+            <div class="row"><div class="ph grow" style="height:40px"></div><div class="ph grow" style="height:40px"></div><div class="ph grow" style="height:40px"></div><div class="ph grow" style="height:40px"></div></div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- About -->
+      <div class="framewrap">
+        <div class="flabel">About <span class="route">/about</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="row between"><div class="logo"></div><div class="links"><span>SERVICES</span><span>ABOUT</span><span>CONTACT</span></div></div>
+            <div class="ttl lg">We make AI practical</div>
+            <div class="para" style="height:22px"></div>
+            <div class="cap ink">OUR STORY</div>
+            <div class="row"><div class="para grow" style="height:46px"></div><div class="para grow" style="height:46px"></div></div>
+            <div class="divider"></div>
+            <div class="row between"><div class="col center grow"><div class="ttl lg">150+</div><div class="cap ink">PROJECTS</div></div><div class="col center grow"><div class="ttl lg">40%</div><div class="cap ink">COST CUT</div></div><div class="col center grow"><div class="ttl lg">98%</div><div class="cap ink">HAPPY</div></div></div>
+            <div class="cap ink">WHAT WE VALUE</div>
+            <div class="row"><div class="ph grow" style="height:40px"></div><div class="ph grow" style="height:40px"></div><div class="ph grow" style="height:40px"></div></div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Articles list -->
+      <div class="framewrap">
+        <div class="flabel">Articles <span class="route">/articles</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="row between"><div class="logo"></div><div class="links"><span>SERVICES</span><span>ABOUT</span><span>CONTACT</span></div></div>
+            <div class="ph" style="height:70px"></div>
+            <div class="ttl">Insights &amp; case studies</div>
+            <div class="row wrap">
+              <div class="col grow" style="min-width:120px"><div class="ph" style="height:56px"></div><div class="cap ink">DATE</div><div class="ttl">Article title</div><div class="para" style="height:16px"></div></div>
+              <div class="col grow" style="min-width:120px"><div class="ph" style="height:56px"></div><div class="cap ink">DATE</div><div class="ttl">Article title</div><div class="para" style="height:16px"></div></div>
+            </div>
+            <div class="row wrap">
+              <div class="col grow" style="min-width:120px"><div class="ph" style="height:56px"></div><div class="ttl">Article title</div></div>
+              <div class="col grow" style="min-width:120px"><div class="ph" style="height:56px"></div><div class="ttl">Article title</div></div>
+            </div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Article detail -->
+      <div class="framewrap">
+        <div class="flabel">Article detail <span class="route">/articles/[slug]</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="row between"><div class="logo"></div><div class="links"><span>SERVICES</span><span>ABOUT</span><span>CONTACT</span></div></div>
+            <div class="cap ink">&larr; ALL ARTICLES</div>
+            <div class="cap ink">PUBLISHED · DATE</div>
+            <div class="ttl lg">The article headline goes here</div>
+            <div class="ph" style="height:96px"></div>
+            <div class="para" style="height:30px"></div>
+            <div class="para" style="height:46px"></div>
+            <div class="para" style="height:30px"></div>
+            <div class="cta solid">TALK TO US</div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gallery -->
+      <div class="framewrap">
+        <div class="flabel">Gallery <span class="route">/gallery</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="row between"><div class="logo"></div><div class="links"><span>SERVICES</span><span>ABOUT</span><span>CONTACT</span></div></div>
+            <div class="ph" style="height:70px"></div>
+            <div class="ttl">A look inside AI-Solutions</div>
+            <div class="row"><div class="ph grow" style="height:64px"></div><div class="ph grow" style="height:64px"></div></div>
+            <div class="row"><div class="ph grow" style="height:64px"></div><div class="ph grow" style="height:64px"></div></div>
+            <div class="row"><div class="ph grow" style="height:64px"></div><div class="ph grow" style="height:64px"></div></div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Events -->
+      <div class="framewrap">
+        <div class="flabel">Events <span class="route">/events</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="row between"><div class="logo"></div><div class="links"><span>SERVICES</span><span>ABOUT</span><span>CONTACT</span></div></div>
+            <div class="ph" style="height:70px"></div>
+            <div class="ttl">Upcoming events</div>
+            <div class="row"><div class="ph" style="width:46px;height:46px"></div><div class="col grow"><div class="ttl">Event title</div><div class="cap ink">DATE · LOCATION</div><div class="para" style="height:18px"></div></div></div>
+            <div class="row"><div class="ph" style="width:46px;height:46px"></div><div class="col grow"><div class="ttl">Event title</div><div class="cap ink">DATE · LOCATION</div><div class="para" style="height:18px"></div></div></div>
+            <div class="row"><div class="ph" style="width:46px;height:46px"></div><div class="col grow"><div class="ttl">Event title</div><div class="cap ink">DATE · LOCATION</div><div class="para" style="height:18px"></div></div></div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div class="framewrap">
+        <div class="flabel">Contact <span class="route">/contact</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="row between"><div class="logo"></div><div class="links"><span>SERVICES</span><span>ABOUT</span><span>CONTACT</span></div></div>
+            <div class="ttl">Let's talk about your project</div>
+            <div class="row"><div class="field grow"><span class="lbl">Name</span><div class="input"></div></div><div class="field grow"><span class="lbl">Email</span><div class="input"></div></div></div>
+            <div class="row"><div class="field grow"><span class="lbl">Phone</span><div class="input"></div></div><div class="field grow"><span class="lbl">Company</span><div class="input"></div></div></div>
+            <div class="row"><div class="field grow"><span class="lbl">Country ▾</span><div class="input"></div></div><div class="field grow"><span class="lbl">Job title</span><div class="input"></div></div></div>
+            <div class="field"><span class="lbl">Project details</span><div class="input" style="height:48px"></div></div>
+            <div class="cta solid block">SEND MESSAGE</div>
+            <div class="foot"><span class="cap ink">ADDRESS</span><div class="row"><div class="ico"></div><div class="ico"></div><div class="ico"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reviews -->
+      <div class="framewrap">
+        <div class="flabel">Reviews <span class="route">/reviews</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen">
+            <div class="row between"><div class="logo"></div><div class="links"><span>SERVICES</span><span>ABOUT</span><span>CONTACT</span></div></div>
+            <div class="ph" style="height:60px"></div>
+            <div class="row"><div class="stars">★★★★★</div><div class="cap ink">4.8 · 24 REVIEWS</div></div>
+            <div class="row">
+              <div class="col grow"><div class="stars">★★★★★</div><div class="para" style="height:24px"></div><div class="bar m"></div></div>
+              <div class="col grow"><div class="stars">★★★★☆</div><div class="para" style="height:24px"></div><div class="bar m"></div></div>
+            </div>
+            <div class="divider"></div>
+            <div class="ttl">Share your experience</div>
+            <div class="row"><div class="field grow"><span class="lbl">Name</span><div class="input"></div></div><div class="field grow"><span class="lbl">Email</span><div class="input"></div></div></div>
+            <div class="field"><span class="lbl">Rating</span><div class="stars">☆☆☆☆☆</div></div>
+            <div class="field"><span class="lbl">Review</span><div class="input" style="height:38px"></div></div>
+            <div class="cta solid block">SUBMIT REVIEW</div>
+          </div>
+        </div>
+        <!-- floating chat widget appears on every public page -->
+        <div class="chat" title="Chat widget (all public pages)">💬</div>
+      </div>
+
+    </div>
+
+    <!-- ================= MOBILE · ADMIN ================= -->
+    <div class="section-label">📱 Mobile · Admin dashboard</div>
+    <div class="strip">
+
+      <!-- Login -->
+      <div class="framewrap">
+        <div class="flabel">Admin login <span class="route">/admin/login</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen center" style="min-height:300px; gap:14px">
+            <div class="logo" style="width:34px;height:34px"></div>
+            <div class="ttl lg">AI-Solutions Admin</div>
+            <div class="cap ink">SIGN IN TO MANAGE THE SITE</div>
+            <div class="field" style="width:100%"><span class="lbl">Username</span><div class="input"></div></div>
+            <div class="field" style="width:100%"><span class="lbl">Password</span><div class="input"></div></div>
+            <div class="cta solid block" style="width:100%">SIGN IN</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard -->
+      <div class="framewrap">
+        <div class="flabel">Dashboard <span class="route">/admin</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar">
+              <div class="logo sm"></div>
+              <div class="nav-item active"></div><div class="nav-item"></div><div class="nav-item"></div>
+              <div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div>
+            </div>
+            <div class="content">
+              <div class="ttl lg">Dashboard</div>
+              <div class="cards">
+                <div class="card"><span class="cap ink">INQUIRIES</span><span class="num">128</span></div>
+                <div class="card"><span class="cap ink">REVIEWS</span><span class="num">24</span></div>
+                <div class="card alert"><span class="cap ink">PENDING</span><span class="num">5</span></div>
+                <div class="card"><span class="cap ink">INTEREST</span><span class="num">17</span></div>
+              </div>
+              <div class="cap ink">ACTIVITY OVERVIEW</div>
+              <div class="ph" style="height:54px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inquiries -->
+      <div class="framewrap">
+        <div class="flabel">Inquiries <span class="route">/admin/inquiries</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar">
+              <div class="logo sm"></div>
+              <div class="nav-item"></div><div class="nav-item active"></div><div class="nav-item"></div>
+              <div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div>
+            </div>
+            <div class="content">
+              <div class="row between"><div class="ttl lg">Inquiries</div><div class="badge">128</div></div>
+              <div class="table">
+                <div class="trow head"><span class="cellt grow">NAME</span><span class="cellt grow">EMAIL</span><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">▾</span></div>
+              </div>
+              <div class="cap ink">CLICK A ROW → EXPAND JOB DETAILS</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reviews moderation -->
+      <div class="framewrap">
+        <div class="flabel">Reviews (moderate) <span class="route">/admin/reviews</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar">
+              <div class="logo sm"></div>
+              <div class="nav-item"></div><div class="nav-item"></div><div class="nav-item active"></div>
+              <div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div>
+            </div>
+            <div class="content">
+              <div class="ttl lg">Reviews</div>
+              <div class="row wrap"><div class="badge">ALL</div><div class="badge warn">PENDING</div><div class="badge ok">APPROVED</div><div class="badge">REJECTED</div></div>
+              <div class="card"><div class="row between"><div class="bar m"></div><div class="stars">★★★★★</div></div><span class="badge warn">PENDING</span><div class="para" style="height:18px"></div><div class="row"><div class="cta solid">APPROVE</div><div class="cta">REJECT</div></div></div>
+              <div class="card"><div class="row between"><div class="bar m"></div><div class="stars">★★★★☆</div></div><span class="badge ok">APPROVED</span><div class="para" style="height:18px"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Articles manage -->
+      <div class="framewrap">
+        <div class="flabel">Articles (manage) <span class="route">/admin/articles</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar">
+              <div class="logo sm"></div>
+              <div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div>
+              <div class="nav-item active"></div><div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div>
+            </div>
+            <div class="content">
+              <div class="row between"><div class="ttl lg">Articles</div><div class="cta solid">+ NEW</div></div>
+              <div class="table">
+                <div class="trow head"><span class="cellt grow">TITLE</span><span class="cellt">STATUS</span><span class="cellt">ACTIONS</span></div>
+                <div class="trow"><div class="bar grow"></div><span class="badge ok">PUB</span><span class="cellt">✎ 🗑</span></div>
+                <div class="trow"><div class="bar grow"></div><span class="badge">DRAFT</span><span class="cellt">✎ 🗑</span></div>
+                <div class="trow"><div class="bar grow"></div><span class="badge ok">PUB</span><span class="cellt">✎ 🗑</span></div>
+                <div class="trow"><div class="bar grow"></div><span class="badge">DRAFT</span><span class="cellt">✎ 🗑</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Article editor -->
+      <div class="framewrap">
+        <div class="flabel">Article editor <span class="route">/admin/articles/new</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar">
+              <div class="logo sm"></div>
+              <div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div>
+              <div class="nav-item active"></div><div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div>
+            </div>
+            <div class="content">
+              <div class="ttl lg">New article</div>
+              <div class="field"><span class="lbl">Title</span><div class="input"></div></div>
+              <div class="field"><span class="lbl">Slug</span><div class="input"></div></div>
+              <div class="field"><span class="lbl">Content</span><div class="input" style="height:56px"></div></div>
+              <div class="field"><span class="lbl">Cover image — UPLOAD</span><div class="ph" style="height:48px"></div></div>
+              <div class="row between"><span class="lbl">Published</span><div class="badge">◯—</div></div>
+              <div class="cta solid block">SAVE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gallery manage -->
+      <div class="framewrap">
+        <div class="flabel">Gallery (manage) <span class="route">/admin/gallery</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar">
+              <div class="logo sm"></div>
+              <div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div>
+              <div class="nav-item"></div><div class="nav-item active"></div><div class="nav-item"></div><div class="nav-item"></div>
+            </div>
+            <div class="content">
+              <div class="row between"><div class="ttl lg">Gallery</div><div class="cta solid">+ NEW</div></div>
+              <div class="cards">
+                <div class="card" style="padding:6px"><div class="ph" style="height:42px"></div><div class="bar m"></div><div class="cellt">✎ 🗑</div></div>
+                <div class="card" style="padding:6px"><div class="ph" style="height:42px"></div><div class="bar m"></div><div class="cellt">✎ 🗑</div></div>
+                <div class="card" style="padding:6px"><div class="ph" style="height:42px"></div><div class="bar m"></div><div class="cellt">✎ 🗑</div></div>
+                <div class="card" style="padding:6px"><div class="ph" style="height:42px"></div><div class="bar m"></div><div class="cellt">✎ 🗑</div></div>
+              </div>
+              <div class="cap ink">FORM: TITLE · IMAGE UPLOAD · CAPTION</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Events manage -->
+      <div class="framewrap">
+        <div class="flabel">Events (manage) <span class="route">/admin/events</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar">
+              <div class="logo sm"></div>
+              <div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div>
+              <div class="nav-item"></div><div class="nav-item"></div><div class="nav-item active"></div><div class="nav-item"></div>
+            </div>
+            <div class="content">
+              <div class="row between"><div class="ttl lg">Events</div><div class="cta solid">+ NEW</div></div>
+              <div class="table">
+                <div class="trow head"><span class="cellt grow">TITLE</span><span class="cellt">DATE</span><span class="cellt">ACT</span></div>
+                <div class="trow"><div class="bar grow"></div><span class="cellt">JUN 25</span><span class="cellt">✎ 🗑</span></div>
+                <div class="trow"><div class="bar grow"></div><span class="cellt">JUL 10</span><span class="cellt">✎ 🗑</span></div>
+                <div class="trow"><div class="bar grow"></div><span class="cellt">AUG 03</span><span class="cellt">✎ 🗑</span></div>
+              </div>
+              <div class="cap ink">FORM: TITLE · DESC · LOCATION · DATE-TIME</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Future interest -->
+      <div class="framewrap">
+        <div class="flabel">Future interest <span class="route">/admin/future-interest</span></div>
+        <div class="frame"><div class="bbar"><i></i><i></i><i></i></div>
+          <div class="screen admin">
+            <div class="sidebar">
+              <div class="logo sm"></div>
+              <div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div>
+              <div class="nav-item"></div><div class="nav-item"></div><div class="nav-item"></div><div class="nav-item active"></div>
+            </div>
+            <div class="content">
+              <div class="row between"><div class="ttl lg">Future interest</div><div class="badge">17</div></div>
+              <div class="table">
+                <div class="trow head"><span class="cellt grow">NAME</span><span class="cellt grow">AREA</span><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">▾</span></div>
+                <div class="trow"><div class="bar grow"></div><div class="bar grow"></div><span class="cellt">▾</span></div>
+              </div>
+              <div class="cap ink">EXPAND ROW → MESSAGE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

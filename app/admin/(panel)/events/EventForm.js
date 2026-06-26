@@ -10,6 +10,7 @@ export default function EventForm({ action, initial = {}, submitLabel = "Save" }
   const [state, formAction, pending] = useActionState(action, initialState);
   const [values, setValues] = useState({
     title: initial.title ?? "",
+    slug: initial.slug ?? "",
     description: initial.description ?? "",
     location: initial.location ?? "",
     eventDate: initial.eventDate ?? "",
@@ -38,6 +39,15 @@ export default function EventForm({ action, initial = {}, submitLabel = "Save" }
         onChange={handleChange}
         error={errors.title}
         placeholder="AI in Practice: Live Webinar"
+      />
+      <TextField
+        id="slug"
+        label="Slug"
+        value={values.slug}
+        onChange={handleChange}
+        error={errors.slug}
+        hint="Lowercase letters, numbers, and hyphens. Used in the public event URL (/events/<slug>)."
+        placeholder="ai-in-practice-webinar"
       />
       <TextArea
         id="description"

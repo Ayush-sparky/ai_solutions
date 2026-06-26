@@ -94,11 +94,12 @@ async function main() {
     ],
   });
 
-  console.log("Seeding upcoming events...");
+  console.log("Seeding events (a mix of past and upcoming)...");
   await prisma.event.createMany({
     data: [
       {
         title: "AI in Practice: Live Webinar",
+        slug: "ai-in-practice-live-webinar",
         description:
           "A 60-minute walkthrough of real AI-Solutions deployments, with live Q&A. Ideal for ops and product leaders evaluating automation.",
         location: "Online",
@@ -106,6 +107,7 @@ async function main() {
       },
       {
         title: "AI-Solutions at TechExpo 2026",
+        slug: "ai-solutions-at-techexpo-2026",
         description:
           "Visit our booth to see live demos of our support-triage and recommendation products, and meet the team.",
         location: "Bengaluru, India",
@@ -113,10 +115,19 @@ async function main() {
       },
       {
         title: "Automation Workshop for SMEs",
+        slug: "automation-workshop-for-smes",
         description:
           "A hands-on workshop helping small and medium businesses identify and scope their first automation project.",
         location: "Online",
         eventDate: new Date("2026-09-10T14:00:00.000Z"),
+      },
+      {
+        title: "Intro to AI for Operations — Recap",
+        slug: "intro-to-ai-for-operations-recap",
+        description:
+          "Our most popular introductory session, covering where AI delivers the fastest ROI in day-to-day operations. This event has concluded — watch this space for the next run.",
+        location: "Online",
+        eventDate: new Date("2026-05-12T10:00:00.000Z"),
       },
     ],
   });

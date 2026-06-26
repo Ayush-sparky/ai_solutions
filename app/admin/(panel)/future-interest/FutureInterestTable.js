@@ -1,10 +1,11 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import ConfirmDeleteButton from "@/components/admin/ConfirmDeleteButton";
 
 const COLUMNS = ["Name", "Email", "Area of interest", "Date"];
 
-export default function FutureInterestTable({ rows }) {
+export default function FutureInterestTable({ rows, deleteAction, query }) {
   const [expanded, setExpanded] = useState(() => new Set());
 
   function toggle(id) {
@@ -19,7 +20,7 @@ export default function FutureInterestTable({ rows }) {
   if (rows.length === 0) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">
-        No future-interest sign-ups yet.
+        {query ? `No sign-ups match “${query}”.` : "No future-interest sign-ups yet."}
       </div>
     );
   }
@@ -39,8 +40,8 @@ export default function FutureInterestTable({ rows }) {
                   {col}
                 </th>
               ))}
-              <th scope="col" className="px-4 py-3 text-right">
-                <span className="sr-only">Details</span>
+              <th scope="col" className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Actions
               </th>
             </tr>
           </thead>
@@ -66,25 +67,28 @@ export default function FutureInterestTable({ rows }) {
                       {row.dateLabel}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => toggle(row.id)}
-                        aria-expanded={isOpen}
-                        aria-controls={`fi-details-${row.id}`}
-                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
-                      >
-                        {isOpen ? "Hide" : "Message"}
-                        <svg
-                          className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2}
-                          stroke="currentColor"
-                          aria-hidden="true"
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => toggle(row.id)}
+                          aria-expanded={isOpen}
+                          aria-controls={`fi-details-${row.id}`}
+                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
                         >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                        </svg>
-                      </button>
+                          {isOpen ? "Hide" : "Message"}
+                          <svg
+                            className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                          </svg>
+                        </button>
+                        <ConfirmDeleteButton action={deleteAction} id={row.id} />
+                      </div>
                     </td>
                   </tr>
                   {isOpen ? (

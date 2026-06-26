@@ -19,6 +19,7 @@ export default async function EditEventPage({ params }) {
   const initial = {
     id: event.id,
     title: event.title,
+    slug: event.slug,
     description: event.description,
     location: event.location,
     eventDate: toDateTimeLocal(event.eventDate),

@@ -1,21 +1,44 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getParam, parsePage, paginate } from "@/lib/pagination";
+import AdminSearch from "@/components/admin/AdminSearch";
+import Pagination from "@/components/admin/Pagination";
 import ConfirmDeleteButton from "@/components/admin/ConfirmDeleteButton";
 import { deleteGalleryItem } from "./actions";
 
 export const metadata = { title: "Gallery" };
 
-async function getItems() {
-  try {
-    return await prisma.galleryItem.findMany({ orderBy: { createdAt: "desc" } });
-  } catch (error) {
-    console.error("Failed to load gallery items:", error);
-    return [];
-  }
+// The gallery is a 3-column card grid, so a slightly larger page fills a row.
+const GALLERY_PAGE_SIZE = 12;
+
+// Case-insensitive search across the title and caption.
+function searchWhere(q) {
+  if (!q) return {};
+  const contains = { contains: q, mode: "insensitive" };
+  return { OR: [{ title: contains }, { caption: contains }] };
 }
 
-export default async function AdminGalleryPage() {
-  const items = await getItems();
+export default async function AdminGalleryPage({ searchParams }) {
+  const sp = await searchParams;
+  const q = getParam(sp?.q);
+  const where = searchWhere(q);
+
+  let items = [];
+  let total = 0;
+  let pageInfo = paginate(1, 0, GALLERY_PAGE_SIZE);
+
+  try {
+    total = await prisma.galleryItem.count({ where });
+    pageInfo = paginate(parsePage(sp?.page), total, GALLERY_PAGE_SIZE);
+    items = await prisma.galleryItem.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: pageInfo.skip,
+      take: pageInfo.take,
+    });
+  } catch (error) {
+    console.error("Failed to load gallery items:", error);
+  }
 
   return (
     <div className="p-6 sm:p-8">
@@ -23,7 +46,7 @@ export default async function AdminGalleryPage() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Gallery</h1>
           <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-sm font-medium text-slate-600">
-            {items.length}
+            {total}
           </span>
         </div>
         <Link
@@ -34,9 +57,13 @@ export default async function AdminGalleryPage() {
         </Link>
       </div>
 
+      <div className="mt-6">
+        <AdminSearch placeholder="Search title or caption…" />
+      </div>
+
       {items.length === 0 ? (
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">
-          No gallery items yet. Add your first one.
+          {q ? `No gallery items match “${q}”.` : "No gallery items yet. Add your first one."}
         </div>
       ) : (
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -73,6 +100,17 @@ export default async function AdminGalleryPage() {
           ))}
         </div>
       )}
+
+      <Pagination
+        basePath="/admin/gallery"
+        params={{ q }}
+        page={pageInfo.current}
+        totalPages={pageInfo.totalPages}
+        total={total}
+        from={pageInfo.from}
+        to={pageInfo.to}
+        unit="item"
+      />
     </div>
   );
 }

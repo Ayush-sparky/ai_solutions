@@ -1,22 +1,66 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/format";
+import { getParam, parsePage, paginate, PAGE_SIZE } from "@/lib/pagination";
+import AdminSearch from "@/components/admin/AdminSearch";
+import FilterChips from "@/components/admin/FilterChips";
+import Pagination from "@/components/admin/Pagination";
 import ConfirmDeleteButton from "@/components/admin/ConfirmDeleteButton";
 import { deleteArticle, toggleArticlePublished } from "./actions";
 
 export const metadata = { title: "Articles" };
 
-async function getArticles() {
-  try {
-    return await prisma.article.findMany({ orderBy: { updatedAt: "desc" } });
-  } catch (error) {
-    console.error("Failed to load articles:", error);
-    return [];
-  }
+// Case-insensitive search across the title and slug.
+function searchWhere(q) {
+  if (!q) return {};
+  const contains = { contains: q, mode: "insensitive" };
+  return { OR: [{ title: contains }, { slug: contains }] };
 }
 
-export default async function AdminArticlesPage() {
-  const articles = await getArticles();
+export default async function AdminArticlesPage({ searchParams }) {
+  const sp = await searchParams;
+  const q = getParam(sp?.q);
+  const requested = getParam(sp?.status).toLowerCase();
+  const filter = ["published", "draft"].includes(requested) ? requested : "all";
+
+  const base = searchWhere(q);
+  const statusWhere =
+    filter === "published"
+      ? { published: true }
+      : filter === "draft"
+        ? { published: false }
+        : {};
+  const where = { AND: [base, statusWhere] };
+
+  let articles = [];
+  let total = 0;
+  let counts = { all: 0, published: 0, draft: 0 };
+  let pageInfo = paginate(1, 0, PAGE_SIZE);
+
+  try {
+    const [all, published] = await Promise.all([
+      prisma.article.count({ where: base }),
+      prisma.article.count({ where: { AND: [base, { published: true }] } }),
+    ]);
+    counts = { all, published, draft: all - published };
+    total = counts[filter] ?? all;
+
+    pageInfo = paginate(parsePage(sp?.page), total, PAGE_SIZE);
+    articles = await prisma.article.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+      skip: pageInfo.skip,
+      take: pageInfo.take,
+    });
+  } catch (error) {
+    console.error("Failed to load articles:", error);
+  }
+
+  const filterOptions = [
+    { label: "All", value: "all", count: counts.all },
+    { label: "Published", value: "published", count: counts.published },
+    { label: "Draft", value: "draft", count: counts.draft },
+  ];
 
   return (
     <div className="p-6 sm:p-8">
@@ -24,7 +68,7 @@ export default async function AdminArticlesPage() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Articles</h1>
           <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-sm font-medium text-slate-600">
-            {articles.length}
+            {counts.all}
           </span>
         </div>
         <Link
@@ -35,10 +79,22 @@ export default async function AdminArticlesPage() {
         </Link>
       </div>
 
+      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <FilterChips
+          basePath="/admin/articles"
+          paramKey="status"
+          active={filter}
+          defaultValue="all"
+          options={filterOptions}
+          params={{ q }}
+        />
+        <AdminSearch placeholder="Search title or slug…" />
+      </div>
+
       <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {articles.length === 0 ? (
           <div className="p-10 text-center text-sm text-slate-500">
-            No articles yet. Create your first one.
+            {q ? `No articles match “${q}”.` : "No articles in this view."}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -100,6 +156,17 @@ export default async function AdminArticlesPage() {
           </div>
         )}
       </div>
+
+      <Pagination
+        basePath="/admin/articles"
+        params={{ q, status: filter === "all" ? undefined : filter }}
+        page={pageInfo.current}
+        totalPages={pageInfo.totalPages}
+        total={total}
+        from={pageInfo.from}
+        to={pageInfo.to}
+        unit="article"
+      />
     </div>
   );
 }

@@ -29,3 +29,25 @@ export async function setReviewStatus(formData) {
   revalidatePath("/reviews");
   revalidatePath("/");
 }
+
+export async function deleteReview(formData) {
+  const session = await getSession();
+  if (!session) redirect("/admin/login");
+
+  const id = formData.get("id")?.toString();
+  if (!id) return;
+
+  try {
+    await prisma.review.delete({ where: { id } });
+    // Drop any notification that pointed at this now-deleted review.
+    await prisma.notification.deleteMany({ where: { type: "REVIEW", entityId: id } });
+  } catch (error) {
+    console.error("Failed to delete review:", error);
+    return;
+  }
+
+  revalidatePath("/admin/reviews");
+  revalidatePath("/admin");
+  revalidatePath("/reviews");
+  revalidatePath("/");
+}

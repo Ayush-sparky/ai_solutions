@@ -1,17 +1,16 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/format";
+import { getParam, parsePage, paginate, PAGE_SIZE } from "@/lib/pagination";
 import StarRating from "@/components/StarRating";
-import { setReviewStatus } from "./actions";
+import AdminSearch from "@/components/admin/AdminSearch";
+import FilterChips from "@/components/admin/FilterChips";
+import Pagination from "@/components/admin/Pagination";
+import ConfirmDeleteButton from "@/components/admin/ConfirmDeleteButton";
+import { setReviewStatus, deleteReview } from "./actions";
 
 export const metadata = { title: "Reviews" };
 
-const FILTERS = [
-  { label: "All", value: "ALL" },
-  { label: "Pending", value: "PENDING" },
-  { label: "Approved", value: "APPROVED" },
-  { label: "Rejected", value: "REJECTED" },
-];
+const STATUSES = ["PENDING", "APPROVED", "REJECTED"];
 
 const BADGE = {
   PENDING: "bg-amber-50 text-amber-700 ring-amber-600/20",
@@ -30,27 +29,55 @@ function StatusBadge({ status }) {
   );
 }
 
+// Case-insensitive search across the author, email, and review body.
+function searchWhere(q) {
+  if (!q) return {};
+  const contains = { contains: q, mode: "insensitive" };
+  return { OR: [{ authorName: contains }, { email: contains }, { content: contains }] };
+}
+
 export default async function AdminReviewsPage({ searchParams }) {
   const sp = await searchParams;
-  const requested = typeof sp?.status === "string" ? sp.status : "ALL";
-  const filter = FILTERS.some((f) => f.value === requested) ? requested : "ALL";
-  const where = filter === "ALL" ? {} : { status: filter };
+  const requested = getParam(sp?.status).toUpperCase();
+  const filter = STATUSES.includes(requested) ? requested : "ALL";
+  const q = getParam(sp?.q);
+
+  const base = searchWhere(q);
+  const where = filter === "ALL" ? base : { AND: [base, { status: filter }] };
 
   let reviews = [];
+  let total = 0;
   let counts = { ALL: 0, PENDING: 0, APPROVED: 0, REJECTED: 0 };
+  let pageInfo = paginate(1, 0, PAGE_SIZE);
+
   try {
-    const [list, all, pending, approved, rejected] = await Promise.all([
-      prisma.review.findMany({ where, orderBy: { createdAt: "desc" } }),
-      prisma.review.count(),
-      prisma.review.count({ where: { status: "PENDING" } }),
-      prisma.review.count({ where: { status: "APPROVED" } }),
-      prisma.review.count({ where: { status: "REJECTED" } }),
+    // Counts reflect the active search so the chips match what's shown.
+    const [all, pending, approved, rejected] = await Promise.all([
+      prisma.review.count({ where: base }),
+      prisma.review.count({ where: { AND: [base, { status: "PENDING" }] } }),
+      prisma.review.count({ where: { AND: [base, { status: "APPROVED" }] } }),
+      prisma.review.count({ where: { AND: [base, { status: "REJECTED" }] } }),
     ]);
-    reviews = list;
     counts = { ALL: all, PENDING: pending, APPROVED: approved, REJECTED: rejected };
+    total = counts[filter] ?? all;
+
+    pageInfo = paginate(parsePage(sp?.page), total, PAGE_SIZE);
+    reviews = await prisma.review.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: pageInfo.skip,
+      take: pageInfo.take,
+    });
   } catch (error) {
     console.error("Failed to load reviews:", error);
   }
+
+  const filterOptions = [
+    { label: "All", value: "ALL", count: counts.ALL },
+    { label: "Pending", value: "PENDING", count: counts.PENDING },
+    { label: "Approved", value: "APPROVED", count: counts.APPROVED },
+    { label: "Rejected", value: "REJECTED", count: counts.REJECTED },
+  ];
 
   return (
     <div className="p-6 sm:p-8">
@@ -59,39 +86,22 @@ export default async function AdminReviewsPage({ searchParams }) {
         Moderate customer reviews. Approved reviews appear on the public reviews page.
       </p>
 
-      {/* Status filter */}
-      <div className="mt-6 flex flex-wrap gap-2">
-        {FILTERS.map((f) => {
-          const active = filter === f.value;
-          const href = f.value === "ALL" ? "/admin/reviews" : `/admin/reviews?status=${f.value}`;
-          return (
-            <Link
-              key={f.value}
-              href={href}
-              className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium ${
-                active
-                  ? "bg-indigo-600 text-white"
-                  : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {f.label}
-              <span
-                className={`rounded-full px-1.5 text-xs ${
-                  active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                }`}
-              >
-                {counts[f.value]}
-              </span>
-            </Link>
-          );
-        })}
+      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <FilterChips
+          basePath="/admin/reviews"
+          paramKey="status"
+          active={filter}
+          defaultValue="ALL"
+          options={filterOptions}
+          params={{ q }}
+        />
+        <AdminSearch placeholder="Search author, email, content…" />
       </div>
 
-      {/* Reviews */}
       <div className="mt-6 space-y-4">
         {reviews.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">
-            No reviews in this view.
+            {q ? `No reviews match “${q}”.` : "No reviews in this view."}
           </div>
         ) : (
           reviews.map((review) => (
@@ -124,40 +134,56 @@ export default async function AdminReviewsPage({ searchParams }) {
                 {review.content}
               </p>
 
-              {review.status === "PENDING" ? (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <form action={setReviewStatus}>
-                    <input type="hidden" name="id" value={review.id} />
-                    <input type="hidden" name="status" value="APPROVED" />
-                    <button
-                      type="submit"
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-green-500"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                      </svg>
-                      Approve
-                    </button>
-                  </form>
-                  <form action={setReviewStatus}>
-                    <input type="hidden" name="id" value={review.id} />
-                    <input type="hidden" name="status" value="REJECTED" />
-                    <button
-                      type="submit"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                      </svg>
-                      Reject
-                    </button>
-                  </form>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {review.status === "PENDING" ? (
+                  <>
+                    <form action={setReviewStatus}>
+                      <input type="hidden" name="id" value={review.id} />
+                      <input type="hidden" name="status" value="APPROVED" />
+                      <button
+                        type="submit"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-green-500"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                        </svg>
+                        Approve
+                      </button>
+                    </form>
+                    <form action={setReviewStatus}>
+                      <input type="hidden" name="id" value={review.id} />
+                      <input type="hidden" name="status" value="REJECTED" />
+                      <button
+                        type="submit"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                        Reject
+                      </button>
+                    </form>
+                  </>
+                ) : null}
+                <div className="ml-auto">
+                  <ConfirmDeleteButton action={deleteReview} id={review.id} />
                 </div>
-              ) : null}
+              </div>
             </div>
           ))
         )}
       </div>
+
+      <Pagination
+        basePath="/admin/reviews"
+        params={{ q, status: filter === "ALL" ? undefined : filter }}
+        page={pageInfo.current}
+        totalPages={pageInfo.totalPages}
+        total={total}
+        from={pageInfo.from}
+        to={pageInfo.to}
+        unit="review"
+      />
     </div>
   );
 }

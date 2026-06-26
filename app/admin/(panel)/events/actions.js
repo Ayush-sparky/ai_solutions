@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 async function requireAdmin() {
   const session = await getSession();
   if (!session) redirect("/admin/login");
@@ -21,6 +23,7 @@ function parseEventDate(raw) {
 function readEvent(formData) {
   return {
     title: (formData.get("title") || "").toString().trim(),
+    slug: (formData.get("slug") || "").toString().trim().toLowerCase(),
     description: (formData.get("description") || "").toString().trim(),
     location: (formData.get("location") || "").toString().trim(),
     eventDate: (formData.get("eventDate") || "").toString().trim(),
@@ -30,6 +33,9 @@ function readEvent(formData) {
 function validateEvent(v) {
   const errors = {};
   if (!v.title) errors.title = "Title is required.";
+  if (!v.slug) errors.slug = "Slug is required.";
+  else if (!SLUG_RE.test(v.slug))
+    errors.slug = "Use lowercase letters, numbers, and hyphens only.";
   if (!v.description) errors.description = "Description is required.";
   if (!v.location) errors.location = "Location is required.";
   if (!v.eventDate) errors.eventDate = "Date and time are required.";
@@ -41,15 +47,17 @@ function validateEvent(v) {
 function dataFrom(values) {
   return {
     title: values.title,
+    slug: values.slug,
     description: values.description,
     location: values.location,
     eventDate: parseEventDate(values.eventDate),
   };
 }
 
-function revalidateEvents() {
+function revalidateEvents(slug) {
   revalidatePath("/admin/events");
   revalidatePath("/events");
+  if (slug) revalidatePath(`/events/${slug}`);
 }
 
 export async function createEvent(prevState, formData) {
@@ -61,11 +69,13 @@ export async function createEvent(prevState, formData) {
   try {
     await prisma.event.create({ data: dataFrom(values) });
   } catch (error) {
+    if (error.code === "P2002")
+      return { errors: { slug: "That slug is already in use." }, values };
     console.error("createEvent failed:", error);
     return { errors: { form: "Something went wrong. Please try again." }, values };
   }
 
-  revalidateEvents();
+  revalidateEvents(values.slug);
   redirect("/admin/events");
 }
 
@@ -80,11 +90,13 @@ export async function updateEvent(prevState, formData) {
   try {
     await prisma.event.update({ where: { id }, data: dataFrom(values) });
   } catch (error) {
+    if (error.code === "P2002")
+      return { errors: { slug: "That slug is already in use." }, values };
     console.error("updateEvent failed:", error);
     return { errors: { form: "Something went wrong. Please try again." }, values };
   }
 
-  revalidateEvents();
+  revalidateEvents(values.slug);
   redirect("/admin/events");
 }
 
@@ -93,6 +105,7 @@ export async function deleteEvent(formData) {
   const id = (formData.get("id") || "").toString();
   if (!id) return;
   try {
+    // Registrations cascade-delete via the schema's onDelete: Cascade relation.
     await prisma.event.delete({ where: { id } });
   } catch (error) {
     console.error("deleteEvent failed:", error);

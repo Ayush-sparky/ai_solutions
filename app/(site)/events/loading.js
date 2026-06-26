@@ -6,12 +6,13 @@ export default function Loading() {
     <>
       <PageHero
         eyebrow="Events"
-        title="Upcoming events"
-        subtitle="Webinars, workshops, and conferences where you can see AI-Solutions in action."
+        title="Events"
+        subtitle="Webinars, workshops, and conferences where you can see AI-Solutions in action. Register for what's coming up, or revisit what you missed."
       />
       <section className="bg-white py-20 sm:py-24">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <ul className="space-y-6">
+          <Skeleton className="h-8 w-48 rounded" />
+          <ul className="mt-6 space-y-6">
             {Array.from({ length: 4 }).map((_, i) => (
               <li
                 key={i}

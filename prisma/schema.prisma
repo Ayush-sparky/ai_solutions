@@ -26,6 +26,13 @@ enum ReviewStatus {
   REJECTED
 }
 
+/// Kind of admin notification. Mirrors the source record that triggered it.
+enum NotificationType {
+  INQUIRY
+  REVIEW
+  EVENT_REGISTRATION
+}
+
 // ===========================================================================
 // Models
 // ===========================================================================
@@ -92,15 +99,59 @@ model GalleryItem {
 }
 
 /// Event (webinar, conference, demo) listed chronologically by eventDate.
+/// The public site splits these into "upcoming" (eventDate in the future) and
+/// "past" (eventDate elapsed); upcoming events accept viewer registrations.
 model Event {
   id          String   @id @default(cuid())
   title       String
+  slug        String   @unique // used in the public detail URL /events/<slug>
   description String
   location    String
   eventDate   DateTime
   createdAt   DateTime @default(now())
 
+  registrations EventRegistration[]
+
   @@index([eventDate])
+}
+
+/// A viewer's sign-up for an upcoming Event, submitted from the public event
+/// detail page. Surfaced in the admin dashboard with a live notification.
+model EventRegistration {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  phone     String?
+  company   String?
+  message   String?
+  createdAt DateTime @default(now())
+
+  // One sign-up per email per event. Emails are normalised to lowercase in the
+  // server action before insert, so this case-sensitive index is effectively
+  // case-insensitive (and avoids the schema drift an expression index would cause).
+  @@unique([eventId, email])
+  // Serves the admin listing: all registrations newest-first, and per-event.
+  @@index([eventId, createdAt])
+  @@index([createdAt])
+}
+
+/// Real-time admin notification for new public submissions (inquiries, reviews,
+/// event registrations). One row is created per event; `readAt` tracks whether an
+/// admin has seen it, which drives the unread badges and toast counts in the dashboard.
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  body      String
+  entityId  String // id of the source Inquiry / Review the notification points at
+  readAt    DateTime? // null = unseen; set when an admin marks it read
+  createdAt DateTime         @default(now())
+
+  // Serves the bell/badge queries: filter unread by type, order newest first.
+  @@index([readAt, createdAt])
+  @@index([type, readAt])
 }
 
 /// Back-office administrator account for the secure dashboard.

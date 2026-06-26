@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -43,7 +44,7 @@ export async function submitReview(prevState, formData) {
   }
 
   try {
-    await prisma.review.create({
+    const review = await prisma.review.create({
       data: {
         authorName: values.authorName,
         email: values.email,
@@ -53,6 +54,14 @@ export async function submitReview(prevState, formData) {
         // are held for moderation and stay hidden from the public site.
         status: "PENDING",
       },
+    });
+    // Real-time heads-up for the admin moderation queue. Self-contained error
+    // handling inside createNotification keeps this off the visitor's path.
+    await createNotification({
+      type: "REVIEW",
+      title: "New review awaiting moderation",
+      body: `${values.authorName} left a ${rating}★ review`,
+      entityId: review.id,
     });
   } catch (error) {
     console.error("Failed to save review:", error);

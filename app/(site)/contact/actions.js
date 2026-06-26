@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { COUNTRIES } from "@/lib/countries";
+import { createNotification } from "@/lib/notifications";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -25,7 +26,12 @@ export async function submitInquiry(prevState, formData) {
   const errors = {};
 
   if (!values.name) errors.name = "Please enter your name.";
+  else if (values.name.length < 2) errors.name = "Please enter your full name.";
   else if (values.name.length > 100) errors.name = "That name is too long.";
+  else if (/\d/.test(values.name))
+    errors.name = "Names can't contain numbers.";
+  else if (!/\p{L}/u.test(values.name))
+    errors.name = "Please enter a valid name.";
 
   if (!values.email) errors.email = "Please enter your email.";
   else if (!EMAIL_RE.test(values.email))
@@ -55,7 +61,15 @@ export async function submitInquiry(prevState, formData) {
   }
 
   try {
-    await prisma.inquiry.create({ data: values });
+    const inquiry = await prisma.inquiry.create({ data: values });
+    // Fire-and-forget: notify the admin dashboard in real time. createNotification
+    // swallows its own errors, so this never affects the visitor's submission.
+    await createNotification({
+      type: "INQUIRY",
+      title: "New inquiry",
+      body: `${values.name}${values.company ? ` · ${values.company}` : ""} — ${values.jobTitle}`,
+      entityId: inquiry.id,
+    });
   } catch (error) {
     console.error("Failed to save inquiry:", error);
     return {
