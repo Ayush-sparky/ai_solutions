@@ -36,3 +36,13 @@ body {
     transform: translateY(0) scale(1);
   }
 }
+
+/* Fade-in for the public gallery lightbox/carousel (see GalleryGrid.js). */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
